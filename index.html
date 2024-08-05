@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Групповая загрузка файлов с Drag and Drop</title>
+    <style>
+        #dropArea {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px;
+            cursor: pointer;
+        }
+        #dropArea.dragover {
+            border-color: #000;
+            background-color: #f0f0f0;
+        }
+        #fileList {
+            margin-top: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        #fileList li {
+            margin: 5px 0;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <form id="uploadForm">
+        <div id="dropArea">Перетащите файлы сюда или нажмите, чтобы выбрать</div>
+        <input type="file" id="fileInput" multiple style="display: none;">
+        <button type="button" onclick="uploadFiles()">Загрузить файлы</button>
+    </form>
+
+    <ul id="fileList"></ul>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        let filesArray = [];
+
+        dropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropArea.classList.add('dragover');
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('dragover');
+        });
+
+        dropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropArea.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                filesArray.push(files[i]);
+            }
+            updateFileList();
+        }
+
+        function updateFileList() {
+            fileList.innerHTML = ''; // Очистка текущего списка
+            filesArray.forEach((file, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                fileList.appendChild(listItem);
+            });
+        }
+
+        function uploadFiles() {
+            if (filesArray.length === 0) {
+                alert('Пожалуйста, выберите файлы для загрузки.');
+                return;
+            }
+
+            const formData = new FormData();
+            filesArray.forEach(file => {
+                formData.append('files[]', file);
+            });
+
+            fetch('your-upload-endpoint-url', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                alert('Файлы успешно загружены.');
+                filesArray = []; // Очистка массива после успешной загрузки
+                updateFileList(); // Обновление списка файлов
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при загрузке файлов.');
+            });
+        }
+    </script>
+</body>
+</html>
